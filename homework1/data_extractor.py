@@ -8,24 +8,7 @@ def extract_data(dataset_file, num_essay=None):
     essays = pd.DataFrame()
     dataset_path = join('datasets', dataset_file)
 
-    # read the zip file containing the dataset:
-    with zipfile.ZipFile(dataset_path) as dataset_zipfile:
-        # find the name of the file inside the zip file
-        filename = dataset_zipfile.namelist()[0]
-
-        with dataset_zipfile.open(filename) as dataset_file:
-            # load the file on a dataframe
-            csv_dataset = pd.read_csv(dataset_file)
-
-            # select only the "full_text" column from the DataFrame
-            essay_column = csv_dataset['full_text']
-
-            # extract only the first num_essay essays from the dataset
-            essays = essay_column.head(num_essay)
-
-        print(essays)
-
-
+# Read the zip file containing the dataset:
 def extract_data(dataset_file, num_essay=None):
     # datasets_source: https://www.kaggle.com/datasets/nbroad/persaude-corpus-2/
     essays = []
@@ -46,7 +29,6 @@ def extract_data(dataset_file, num_essay=None):
             # extract only the first num_essay essays from the dataset
             essays = essay_column.head(num_essay).tolist()
 
-    #print(essays)
     return essays
 
 

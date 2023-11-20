@@ -120,8 +120,8 @@ class Apriori:
 class AssociationRules:
 
     def find(self, L, c, verbose, option=1):
-        rules = []  # Initialize an empty list to store the association rules
-
+        # Initialize an empty list to store the association rules
+        rules = []
         # Loop through the list L from index 2 to the length of L
         for k in range(2, len(L)+1):
             # Iterate over each itemset (key) in the dictionary at index k of list L

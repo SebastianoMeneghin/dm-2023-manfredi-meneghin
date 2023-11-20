@@ -6,7 +6,7 @@ from classes import Apriori, AssociationRules
 parser = argparse.ArgumentParser(description='Find frequent itemsets and association rules for a given support/confidence')
 
 # Add command-line arguments to the parser
-parser.add_argument('-dataset-file', default='homework2/T10I4D100K.dat', help='name of a transactions dataset with baskets and items')
+parser.add_argument('-dataset-file', default='homework2/data/T10I4D100K.dat', help='name of a transactions dataset with baskets and items')
 parser.add_argument('-s', default=1000, type=int, help='minimum support a itemset must have to be considered frequent')
 parser.add_argument('-c', default=0.5, type=float, help='minimum confidence a rule must have to be generated')
 parser.add_argument('-verbose', default=True, type=bool, help='decides if the results are printed')

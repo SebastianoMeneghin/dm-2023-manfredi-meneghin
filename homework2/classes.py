@@ -80,7 +80,7 @@ class Apriori:
                     processed_basket.append(processed_item)
                 basket_list.append(processed_basket)
         
-        # Saves itemsets that have at least support s
+        # Saves itemsets of dimension 1 (one item) that have at least support s
         self.L[1] = {}
         for item in sorted(self.C_k):
             if self.C_k[item] >= self.s:
@@ -119,7 +119,7 @@ class Apriori:
 
 class AssociationRules:
 
-    def find(self, L, c, verbose, option=1):
+    def find(self, L, c, verbose):
         # Initialize an empty list to store the association rules
         rules = []
         # Loop through the list L from index 2 to the length of L
@@ -136,13 +136,8 @@ class AssociationRules:
                             confidence = L[k][key] / L[k-1][subset]
                             # If the confidence is greater or equal to the threshold c
                             if c <= confidence:
-                                # Depending on the option, add a different representation of the rule to the rules list
-                                if option == 1:
-                                    # For option 1, add the rule with the consequent as a single item
-                                    rules.append([subset, k1, confidence])
-                                elif option == 2:
-                                    # For option 2, add the rule with the consequent as a set of items (that are not in the antecedent)
-                                    rules.append([subset, {k1 for k1 in key if k1 not in subset}])
+                                # Add the rule with the consequent as a single item
+                                rules.append([subset, k1, confidence])
         
         # If verbose is True, print each rule
         if verbose:

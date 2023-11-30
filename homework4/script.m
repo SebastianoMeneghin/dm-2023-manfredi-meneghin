@@ -2,12 +2,12 @@ clear all
 clc
 %% Calling the algorithm on the first dataset
 k = 4
-E = csvread('example1.dat');
+E = csvread('datasets/example1.dat');
 algorithm(E, k, 0);
 
 %% Calling the algorithm on the second dataset
 k = 2
-E = csvread('example2.dat');
+E = csvread('datasets/example2.dat');
 algorithm(E, k, 1);
 %%
 

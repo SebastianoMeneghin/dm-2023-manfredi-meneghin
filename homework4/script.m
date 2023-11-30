@@ -21,7 +21,7 @@ function [clusters, L] = algorithm(E, k, num_exp)
     spy(A)
 
     % Visualize the graph in 2D and 3D
-    visualize_graph(A, 'force3', 2 + figure_offset);
+    visualize_graph(A, 'force', 2 + figure_offset);
     visualize_graph(A, 'force3', 3 + figure_offset);
     plot2d = visualize_graph(A, 'force', 4 + figure_offset);
     plot3d = visualize_graph(A, 'force3', 5 + figure_offset);

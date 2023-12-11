@@ -13,6 +13,11 @@ public class Config {
   private GraphInitColorPolicy initColorPolicy;
   private NodeSelectionPolicy nodeSelectionPolicy;
   private Float alpha;
+  
+  private AnnealingSelectionPolicy annealingPolicy;
+  private Boolean restartTemp;
+  private Integer roundsRestart;
+  private Float deltaDecay;
 
   public Config setAlpha(Float alpha) {
     this.alpha = alpha;
@@ -71,6 +76,26 @@ public class Config {
 
   public Config setUniformRandSampleSize(Integer rnd_list_size) {
     this.uniformRandomSampleSize = rnd_list_size;
+    return this;
+  }
+
+  public Config setAnnealingSelectionPolicy(AnnealingSelectionPolicy policy) {
+    this.annealingPolicy = policy;
+    return this;
+  }
+
+  public Config setRestartTemp(Boolean restartTemp) {
+    this.restartTemp = restartTemp;
+    return this;
+  }
+
+  public Config setRoundsRestart(Integer roundsRestart) {
+    this.roundsRestart = roundsRestart;
+    return this;
+  }
+
+  public Config setDeltaDecay(Float deltaDecay) {
+    this.deltaDecay = deltaDecay;
     return this;
   }
 
@@ -156,6 +181,34 @@ public class Config {
     if (alpha == null) {
     }
     return alpha;
+  }
+
+  public AnnealingSelectionPolicy getAnnealingPolicy() {
+    if (annealingPolicy == null) {
+      throw new NullPointerException("Annealing policy is not defined.");
+    }
+    return annealingPolicy;
+  }
+
+  public Boolean getRestartTemp() {
+    if (restartTemp == null) {
+      throw new NullPointerException("Restart temperature flag is not set");
+    }
+    return restartTemp;
+  }
+
+  public Integer getRoundsRestart() {
+    if (roundsRestart == null) {
+      throw new NullPointerException("Rounds restart is not set");
+    }
+    return roundsRestart;
+  }
+
+  public Float getDeltaDecay() {
+    if (deltaDecay == null) {
+      throw new NullPointerException("Delta decay is not set");
+    }
+    return deltaDecay;
   }
 
   public Config createJabejaConfig() {

@@ -6,7 +6,6 @@ import se.kth.jabeja.io.GraphReader;
 import se.kth.jabeja.config.Config;
 import se.kth.jabeja.rand.RandNoGenerator;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 

@@ -6,6 +6,8 @@ import org.kohsuke.args4j.Option;
 import se.kth.jabeja.config.Config;
 import se.kth.jabeja.config.GraphInitColorPolicy;
 import se.kth.jabeja.config.NodeSelectionPolicy;
+// Import AnnealingSelection policy
+import se.kth.jabeja.config.AnnealingSelectionPolicy;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -37,8 +39,21 @@ public class CLI {
   @Option(name = "-seed", usage = "Seed.")
   private int SEED = 0;
 
-  @Option(name = "-alpha", usage = "Alpah parameter")
+  @Option(name = "-alpha", usage = "Alpha parameter")
   private float ALPHA = 2;
+
+  @Option(name = "-annealingSelectionPolicy", usage = "Annealing selection policy. Supported, LINEAR, EXPONENTIAL, IMPROVED_EXP")
+  private String ANNEALING_POLICY = "LINEAR";
+  private AnnealingSelectionPolicy annealingPolicy = AnnealingSelectionPolicy.LINEAR;
+
+  @Option(name = "-restart-temp", usage = "Restart temperature if edge cut has remained constant for ROUNDS_RESTART rounds.")
+  private boolean restartTemp = false;
+
+  @Option(name = "-rounds-restart", usage = "Number of rounds with constant edge cut seen before temperature is restarted.")
+  private int roundsRestart = 100;
+
+  @Option(name = "-delta-decay", usage = "Decay rate for delta parameter which is applied each time the temperature is restarted.")
+  private float deltaDecay = 0;
 
   @Option(name = "-randNeighborsSampleSize", usage = "Number of random neighbors sample size.")
   private int randNeighborsSampleSize = 3;
@@ -47,7 +62,7 @@ public class CLI {
   private String GRAPH_INIT_COLOR_SELECTION_POLICY = "ROUND_ROBIN";
   private GraphInitColorPolicy graphInitColorSelectionPolicy = GraphInitColorPolicy.ROUND_ROBIN;
 
-  @Option(name = "-nodeSelectionPolicy", usage = "Node selection plicy. Supported, RANDOM, LOCAL, HYBRID")
+  @Option(name = "-nodeSelectionPolicy", usage = "Node selection policy. Supported, RANDOM, LOCAL, HYBRID")
   private String NODE_SELECTION_POLICY = "HYBRID";
   private NodeSelectionPolicy nodeSelectionPolicy = NodeSelectionPolicy.HYBRID;
 
@@ -59,7 +74,8 @@ public class CLI {
 
   public Config parseArgs(String[] args) throws FileNotFoundException {
     CmdLineParser parser = new CmdLineParser(this);
-    parser.setUsageWidth(80);
+    parser.getProperties().withUsageWidth(80);
+
     try {
       // parse the arguments.
       parser.parseArgument(args);
@@ -81,6 +97,16 @@ public class CLI {
         nodeSelectionPolicy = NodeSelectionPolicy.HYBRID;
       } else {
         throw new IllegalArgumentException("Node selection policy is not supported");
+      }
+
+      if (ANNEALING_POLICY.compareToIgnoreCase(AnnealingSelectionPolicy.LINEAR.toString()) == 0) {
+        annealingPolicy = AnnealingSelectionPolicy.LINEAR;
+      } else if (ANNEALING_POLICY.compareToIgnoreCase(AnnealingSelectionPolicy.EXPONENTIAL.toString()) == 0) {
+        annealingPolicy = AnnealingSelectionPolicy.EXPONENTIAL;
+      } else if (ANNEALING_POLICY.compareToIgnoreCase(AnnealingSelectionPolicy.IMPROVED_EXP.toString()) == 0) {
+        annealingPolicy = AnnealingSelectionPolicy.IMPROVED_EXP;
+      } else {
+        throw new IllegalArgumentException("Annealing selection policy is not supported");
       }
 
     } catch (Exception e) {
@@ -110,6 +136,10 @@ public class CLI {
             .setNodeSelectionPolicy(nodeSelectionPolicy)
             .setGraphInitialColorPolicy(graphInitColorSelectionPolicy)
             .setOutputDir(OUTPUT_DIR)
-            .setAlpha(ALPHA);
+            .setAlpha(ALPHA)
+            .setAnnealingSelectionPolicy(annealingPolicy)
+            .setRestartTemp(restartTemp)
+            .setRoundsRestart(roundsRestart)
+            .setDeltaDecay(deltaDecay);
   }
 }

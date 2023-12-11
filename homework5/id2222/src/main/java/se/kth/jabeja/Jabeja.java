@@ -5,6 +5,8 @@ import se.kth.jabeja.config.Config;
 import se.kth.jabeja.config.NodeSelectionPolicy;
 import se.kth.jabeja.io.FileIO;
 import se.kth.jabeja.rand.RandNoGenerator;
+// Add import from Config class
+import se.kth.jabeja.config.AnnealingSelectionPolicy;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +22,17 @@ public class Jabeja {
   private float T;
   private boolean resultFileCreated = false;
 
+  private Random random = new Random();
+  private boolean linearAnnealing = false;
+
+  // String to change output file path
+  private String outputFilePath = null;
+
+  // parameters for restarting the temperature
+  private int sameEdgeCutRounds = 0;
+  private int currentEdgeCut = 0;
+  private int previousEdgeCut = 0;
+
   //-------------------------------------------------------------------
   public Jabeja(HashMap<Integer, Node> graph, Config config) {
     this.entireGraph = graph;
@@ -28,6 +41,12 @@ public class Jabeja {
     this.numberOfSwaps = 0;
     this.config = config;
     this.T = config.getTemperature();
+
+    this.random.setSeed(config.getSeed());
+    this.linearAnnealing = config.getAnnealingPolicy() == AnnealingSelectionPolicy.LINEAR;
+
+    if (!linearAnnealing)
+      config.setTemperature(1.0f);
   }
 
 
@@ -42,6 +61,7 @@ public class Jabeja {
       //reduce the temperature
       saCoolDown();
       report();
+      restartTemperature();
     }
   }
 
@@ -49,11 +69,20 @@ public class Jabeja {
    * Simulated analealing cooling function
    */
   private void saCoolDown(){
-    // TODO for second task
-    if (T > 1)
+    float min_temp = 0.0001f;
+    if (linearAnnealing){ min_temp = 1.0f;}
+
+    if (T > min_temp && linearAnnealing){
+      // decrease temperature linearly over time
       T -= config.getDelta();
-    if (T < 1)
-      T = 1;
+    } 
+    else if (T > min_temp && !linearAnnealing){
+      // decrease temperature exponentially over time
+      T *= config.getDelta();
+    } 
+    else {
+      T = min_temp;
+    }
   }
 
   /**
@@ -67,30 +96,103 @@ public class Jabeja {
     if (config.getNodeSelectionPolicy() == NodeSelectionPolicy.HYBRID
             || config.getNodeSelectionPolicy() == NodeSelectionPolicy.LOCAL) {
       // swap with random neighbors
-      // TODO
+      partner = findPartner(nodeId, getNeighbors(nodep));
     }
 
     if (config.getNodeSelectionPolicy() == NodeSelectionPolicy.HYBRID
             || config.getNodeSelectionPolicy() == NodeSelectionPolicy.RANDOM) {
       // if local policy fails then randomly sample the entire graph
-      // TODO
+      if (partner == null)
+        partner = findPartner(nodeId, getSample(nodeId));
     }
 
     // swap the colors
-    // TODO
+    if (partner != null) {
+      int colorp = nodep.getColor();
+      nodep.setColor(partner.getColor());
+      partner.setColor(colorp);
+      numberOfSwaps++;
+    }
   }
 
   public Node findPartner(int nodeId, Integer[] nodes){
 
     Node nodep = entireGraph.get(nodeId);
+    float alpha = config.getAlpha();
 
     Node bestPartner = null;
     double highestBenefit = 0;
 
-    // TODO
+    // find best node as swap partner for node p
+    for (int node : nodes) {
+      Node nodeq = entireGraph.get(node);
+
+      // compute dpp and dqq
+      int dpp = getDegree(nodep, nodep.getColor());
+      int dqq = getDegree(nodeq, nodeq.getColor());
+      double oldValue = Math.pow(dpp, alpha) + Math.pow(dqq, alpha);
+
+      // compute dpq and dqp
+      int dpq = getDegree(nodep, nodeq.getColor());
+      int dqp = getDegree(nodeq, nodep.getColor());
+      double newValue = Math.pow(dpq, alpha) + Math.pow(dqp, alpha);
+
+      boolean updateSolution = false;
+      double currentBenefit = 0, acceptanceProb = 0;
+
+      if (linearAnnealing) {
+        currentBenefit = newValue;
+        updateSolution = newValue * T > oldValue;
+
+      } else {  // exponential or improved exponential annealing policies
+        if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.EXPONENTIAL) {
+          // acceptance probability: a_p = e^((new - old) / T)
+          acceptanceProb = Math.exp((newValue - oldValue) / T);
+
+        } else if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.IMPROVED_EXP) {
+          // acceptance probability: a_p = e^((1/old - 1/new) / T)
+          acceptanceProb = Math.exp((1 / oldValue - 1 / newValue) / T);
+        }
+        
+        currentBenefit = acceptanceProb;
+        updateSolution = acceptanceProb > random.nextDouble() && newValue != oldValue;
+      }
+
+      // update the best partner and highest benefit
+      if (currentBenefit > highestBenefit && updateSolution) {
+        bestPartner = nodeq;
+        highestBenefit = currentBenefit;
+      }
+    }
 
     return bestPartner;
   }
+
+  /**
+   * Restart temperature if edge cut has converged (may be a local minimum)
+   */
+  private void restartTemperature() {
+    // only restart the temperature if that flag is set
+    if (!config.getRestartTemp()) return;
+
+    // check if the edge cut has remained constant between rounds
+    if (currentEdgeCut == previousEdgeCut) {
+      sameEdgeCutRounds++;
+
+      if (sameEdgeCutRounds == config.getRoundsRestart()) {
+        T = config.getTemperature();
+
+        // decaying delta over time may converge to better solutions
+        config.setDelta(config.getDelta() / (1+config.getDeltaDecay()));
+        sameEdgeCutRounds = 0;
+      }
+    } else {
+      sameEdgeCutRounds = 0;
+    }
+    // update to the current edge cut
+    previousEdgeCut = currentEdgeCut;
+  }
+
 
   /**
    * The the degreee on the node based on color
@@ -220,12 +322,15 @@ public class Jabeja {
     outputFilePath = config.getOutputDir() +
             File.separator +
             inputFile.getName() + "_" +
+            "AP" + "_" + config.getAnnealingPolicy() + "_" +
             "NS" + "_" + config.getNodeSelectionPolicy() + "_" +
             "GICP" + "_" + config.getGraphInitialColorPolicy() + "_" +
             "T" + "_" + config.getTemperature() + "_" +
             "D" + "_" + config.getDelta() + "_" +
             "RNSS" + "_" + config.getRandomNeighborSampleSize() + "_" +
             "URSS" + "_" + config.getUniformRandomSampleSize() + "_" +
+            "RT" + "_" + config.getRestartTemp() + "_" +
+            "DD" + "_" + config.getDeltaDecay() + "_" +
             "A" + "_" + config.getAlpha() + "_" +
             "R" + "_" + config.getRounds() + ".txt";
 
